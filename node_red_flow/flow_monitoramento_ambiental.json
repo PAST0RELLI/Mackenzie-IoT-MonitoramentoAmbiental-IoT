@@ -1,0 +1,494 @@
+[
+    {
+        "id": "flow_principal_monitoramento",
+        "type": "tab",
+        "label": "Monitoramento Ambiental Completo",
+        "disabled": false,
+        "info": "Fluxo completo para monitoramento ambiental com dois locais internos e API externa, enviando para InfluxDB com tags."
+    },
+    {
+        "id": "mqtt_sala_temp",
+        "type": "mqtt in",
+        "z": "flow_principal_monitoramento",
+        "name": "MQTT Sala Temp",
+        "topic": "TESTMACK1870/10419046/local1/temperatura",
+        "qos": "2",
+        "datatype": "utf8",
+        "broker": "seu_broker_mqtt_id",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "func_prep_sala_temp"
+            ]
+        ]
+    },
+    {
+        "id": "func_prep_sala_temp",
+        "type": "function",
+        "z": "flow_principal_monitoramento",
+        "name": "Prepara Sala Temp",
+        "func": "msg.payload = parseFloat(msg.payload);\nmsg.topic = \"temperatura\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 100,
+        "wires": [
+            [
+                "join_sala_dados"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_sala_umid",
+        "type": "mqtt in",
+        "z": "flow_principal_monitoramento",
+        "name": "MQTT Sala Umid",
+        "topic": "TESTMACK1870/10419046/local1/umidade",
+        "qos": "2",
+        "datatype": "utf8",
+        "broker": "seu_broker_mqtt_id",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 160,
+        "wires": [
+            [
+                "func_prep_sala_umid"
+            ]
+        ]
+    },
+    {
+        "id": "func_prep_sala_umid",
+        "type": "function",
+        "z": "flow_principal_monitoramento",
+        "name": "Prepara Sala Umid",
+        "func": "msg.payload = parseFloat(msg.payload);\nmsg.topic = \"umidade\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 160,
+        "wires": [
+            [
+                "join_sala_dados"
+            ]
+        ]
+    },
+    {
+        "id": "join_sala_dados",
+        "type": "join",
+        "z": "flow_principal_monitoramento",
+        "name": "Join Sala Dados",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": true,
+        "accumulate": false,
+        "timeout": "10",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 570,
+        "y": 130,
+        "wires": [
+            [
+                "func_format_sala_influx"
+            ]
+        ]
+    },
+    {
+        "id": "func_format_sala_influx",
+        "type": "function",
+        "z": "flow_principal_monitoramento",
+        "name": "Formata Sala p/ Influx",
+        "func": "if (typeof msg.payload.temperatura === 'number' && typeof msg.payload.umidade === 'number') {\n    let fields = {\n        temperatura_interna: msg.payload.temperatura,\n        umidade_interna: msg.payload.umidade\n    };\n\n    let tags = {\n        local: \"sala\",\n        fonte_dado: \"sensor_dht22\"\n    };\n\n    msg.payload = {\n        fields: fields,\n        tags: tags\n    };\n    msg.measurement = \"monitoramento_ambiental\";\n    return msg;\n} else {\n    node.warn(\"Dados da Sala incompletos após o Join: \" + JSON.stringify(msg.payload));\n    return null;\n}",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 130,
+        "wires": [
+            [
+                "link_out_para_influx_sala"
+            ]
+        ]
+    },
+    {
+        "id": "link_out_para_influx_sala",
+        "type": "link out",
+        "z": "flow_principal_monitoramento",
+        "name": "Para Influx (Sala)",
+        "links": [
+            "link_in_de_fontes"
+        ],
+        "x": 995,
+        "y": 130,
+        "wires": []
+    },
+    {
+        "id": "mqtt_quarto_temp",
+        "type": "mqtt in",
+        "z": "flow_principal_monitoramento",
+        "name": "MQTT Quarto Temp",
+        "topic": "TESTMACK1870/10419046/local2/temperatura",
+        "qos": "2",
+        "datatype": "utf8",
+        "broker": "seu_broker_mqtt_id",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 260,
+        "wires": [
+            [
+                "func_prep_quarto_temp"
+            ]
+        ]
+    },
+    {
+        "id": "func_prep_quarto_temp",
+        "type": "function",
+        "z": "flow_principal_monitoramento",
+        "name": "Prepara Quarto Temp",
+        "func": "msg.payload = parseFloat(msg.payload);\nmsg.topic = \"temperatura\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 260,
+        "wires": [
+            [
+                "join_quarto_dados"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_quarto_umid",
+        "type": "mqtt in",
+        "z": "flow_principal_monitoramento",
+        "name": "MQTT Quarto Umid",
+        "topic": "TESTMACK1870/10419046/local2/umidade",
+        "qos": "2",
+        "datatype": "utf8",
+        "broker": "seu_broker_mqtt_id",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 320,
+        "wires": [
+            [
+                "func_prep_quarto_umid"
+            ]
+        ]
+    },
+    {
+        "id": "func_prep_quarto_umid",
+        "type": "function",
+        "z": "flow_principal_monitoramento",
+        "name": "Prepara Quarto Umid",
+        "func": "msg.payload = parseFloat(msg.payload);\nmsg.topic = \"umidade\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 320,
+        "wires": [
+            [
+                "join_quarto_dados"
+            ]
+        ]
+    },
+    {
+        "id": "join_quarto_dados",
+        "type": "join",
+        "z": "flow_principal_monitoramento",
+        "name": "Join Quarto Dados",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "10",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 590,
+        "y": 290,
+        "wires": [
+            [
+                "func_format_quarto_influx"
+            ]
+        ]
+    },
+    {
+        "id": "func_format_quarto_influx",
+        "type": "function",
+        "z": "flow_principal_monitoramento",
+        "name": "Formata Quarto p/ Influx",
+        "func": "if (typeof msg.payload.temperatura === 'number' && typeof msg.payload.umidade === 'number') {\n    let fields = {\n        temperatura_interna: msg.payload.temperatura,\n        umidade_interna: msg.payload.umidade\n    };\n\n    let tags = {\n        local: \"quarto\",\n        fonte_dado: \"sensor_dht22\"\n    };\n\n    msg.payload = {\n        fields: fields,\n        tags: tags\n    };\n    msg.measurement = \"monitoramento_ambiental\";\n    return msg;\n} else {\n    node.warn(\"Dados do Quarto incompletos após o Join: \" + JSON.stringify(msg.payload));\n    return null;\n}",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 290,
+        "wires": [
+            [
+                "link_out_para_influx_quarto"
+            ]
+        ]
+    },
+    {
+        "id": "link_out_para_influx_quarto",
+        "type": "link out",
+        "z": "flow_principal_monitoramento",
+        "name": "Para Influx (Quarto)",
+        "links": [
+            "link_in_de_fontes"
+        ],
+        "x": 1015,
+        "y": 290,
+        "wires": []
+    },
+    {
+        "id": "inject_api_trigger",
+        "type": "inject",
+        "z": "flow_principal_monitoramento",
+        "name": "API Trigger (15 min)",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 420,
+        "wires": [
+            [
+                "func_build_owm_url"
+            ]
+        ]
+    },
+    {
+        "id": "func_build_owm_url",
+        "type": "function",
+        "z": "flow_principal_monitoramento",
+        "name": "Build OWM URL",
+        "func": "const apiKey = \"bfd68eeb8a9c3cd10a984c7cd202983c\";\nconst city = \"Sao Paulo\";\nconst countryCode = \"BR\";\nconst units = \"metric\";\nconst lang = \"pt_br\";\n\nmsg.url = `https://api.openweathermap.org/data/2.5/weather?q=${city},${countryCode}&appid=${apiKey}&units=${units}&lang=${lang}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 420,
+        "wires": [
+            [
+                "http_request_owm"
+            ]
+        ]
+    },
+    {
+        "id": "http_request_owm",
+        "type": "http request",
+        "z": "flow_principal_monitoramento",
+        "name": "Get OpenWeatherMap Data",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 630,
+        "y": 420,
+        "wires": [
+            [
+                "func_format_api_influx"
+            ]
+        ]
+    },
+    {
+        "id": "func_format_api_influx",
+        "type": "function",
+        "z": "flow_principal_monitoramento",
+        "name": "Formata API p/ Influx",
+        "func": "if (msg.payload && msg.payload.main && typeof msg.payload.main.temp === 'number' &&\n    typeof msg.payload.main.humidity === 'number' &&\n    msg.payload.weather && msg.payload.weather.length > 0 && msg.payload.name) {\n\n    let fields = {\n        temp_externa: msg.payload.main.temp,\n        umid_externa: msg.payload.main.humidity,\n        pressao_externa: msg.payload.main.pressure, \n        descr_tempo_externo: msg.payload.weather[0].description,\n        cidade_api: msg.payload.name\n    };\n\n    let tags = {\n        local: msg.payload.name.toLowerCase().replace(/\\s+/g, '_'),\n        fonte_dado: \"openweathermap_api\"\n    };\n\n    msg.payload = {\n        fields: fields,\n        tags: tags\n    };\n    msg.measurement = \"monitoramento_ambiental\";\n    return msg;\n} else {\n    node.error(\"Resposta da API OpenWeatherMap inválida ou incompleta.\", msg);\n    return null; \n}",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 420,
+        "wires": [
+            [
+                "link_out_para_influx_api"
+            ]
+        ]
+    },
+    {
+        "id": "link_out_para_influx_api",
+        "type": "link out",
+        "z": "flow_principal_monitoramento",
+        "name": "Para Influx (API)",
+        "links": [
+            "link_in_de_fontes"
+        ],
+        "x": 1065,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "link_in_de_fontes",
+        "type": "link in",
+        "z": "flow_principal_monitoramento",
+        "name": "De Fontes de Dados",
+        "links": [
+            "link_out_para_influx_sala",
+            "link_out_para_influx_quarto",
+            "link_out_para_influx_api"
+        ],
+        "x": 315,
+        "y": 540,
+        "wires": [
+            [
+                "debug_antes_influx",
+                "influxdb_out_dados_ambientais"
+            ]
+        ]
+    },
+    {
+        "id": "debug_antes_influx",
+        "type": "debug",
+        "z": "flow_principal_monitoramento",
+        "name": "Debug Antes do Influx",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 620,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "influxdb_out_dados_ambientais",
+        "type": "influxdb out",
+        "z": "flow_principal_monitoramento",
+        "influxdb": "seu_influxdb_config_id",
+        "name": "InfluxDB: Dados Ambientais",
+        "measurement": "",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ns",
+        "retentionPolicyV18Flux": "",
+        "org": "IoT",
+        "bucket": "bucket_nome",
+        "x": 600,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "seu_broker_mqtt_id",
+        "type": "mqtt-broker",
+        "name": " Broker MQTT",
+        "broker": "broker.hivemq.com",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "seu_influxdb_config_id",
+        "type": "influxdb",
+        "hostname": "https://SUA_URL_INFLUXDB_CLOUD",
+        "port": "8086",
+        "protocol": "http",
+        "database": "bucket_dados",
+        "name": " InfluxDB Cloud",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "https://us-east-1-1.aws.cloud2.influxdata.com",
+        "timeout": "",
+        "rejectUnauthorized": false
+    }
+]
